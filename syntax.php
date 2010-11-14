@@ -14,6 +14,7 @@ if (!defined('DOKU_TAB')) define('DOKU_TAB', "\t");
 if (!defined('DOKU_PLUGIN')) define('DOKU_PLUGIN',DOKU_INC.'lib/plugins/');
 
 require_once DOKU_PLUGIN.'syntax.php';
+require_once DOKU_PLUGIN.'bigbluebutton/BigBlueButton.class.php';
 
 class syntax_plugin_bigbluebutton extends DokuWiki_Syntax_Plugin {
     function getType() {
@@ -25,7 +26,7 @@ class syntax_plugin_bigbluebutton extends DokuWiki_Syntax_Plugin {
     }
 
     function getSort() {
-        return 355;
+        return 155;
     }
 
 
@@ -39,8 +40,19 @@ class syntax_plugin_bigbluebutton extends DokuWiki_Syntax_Plugin {
         return $data;
     }
 
-    function render($mode, &$renderer, $data) {
+    function render($mode, &$R, $data) {
         if($mode != 'xhtml') return false;
+
+        #http://groups.google.com/group/bigbluebutton-dev/browse_thread/thread/de2a0098425403e1?pli=1
+        $bbb = new BigBlueButton('http://test-install.blindsidenetworks.com/bigbluebutton/api',
+                                 '8cd8ef52e8e101574e400365b55e11a6');
+
+        $R->doc .= 'here';
+
+        $room = 'dokuwiki5';
+        $R->doc .= '<a href="'.$bbb->joinRoomURL($room,'Andi',true).'">join.</a>';
+
+        dbg($bbb->getAttendees($room));
 
         return true;
     }
