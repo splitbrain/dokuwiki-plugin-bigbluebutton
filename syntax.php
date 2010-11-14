@@ -31,31 +31,36 @@ class syntax_plugin_bigbluebutton extends DokuWiki_Syntax_Plugin {
 
 
     function connectTo($mode) {
-        $this->Lexer->addSpecialPattern('{{bigbluebutton}}',$mode,'plugin_bigbluebutton');
+        $this->Lexer->addSpecialPattern('{{bigbluebutton>[^}]+}}',$mode,'plugin_bigbluebutton');
     }
 
     function handle($match, $state, $pos, &$handler){
         $data = array();
-
+        $data['room'] = trim(substr($match,16,-2));
         return $data;
     }
 
     function render($mode, &$R, $data) {
         if($mode != 'xhtml') return false;
 
+        $helper = plugin_load('helper','bigbluebutton');
+
+        $roomconf = $helper->loadRoomSetup($data['room']);
+        if(!count($roomconf)){
+            $R->doc .= 'No such meeting room configured';
+            return true;
+        }
+
         #http://groups.google.com/group/bigbluebutton-dev/browse_thread/thread/de2a0098425403e1?pli=1
-        $bbb = new BigBlueButton('http://test-install.blindsidenetworks.com/bigbluebutton/api',
-                                 '8cd8ef52e8e101574e400365b55e11a6');
+        $bbb = new BigBlueButton($this->getConf('apiurl'),
+                                 $conf->getConf('salt'));
 
-        $R->doc .= 'here';
-
-        $room = 'dokuwiki5';
-        $R->doc .= '<a href="'.$bbb->joinRoomURL($room,'Andi',true).'">join.</a>';
-
+        //FIXME add a form here
         dbg($bbb->getAttendees($room));
 
         return true;
     }
+
 }
 
 // vim:ts=4:sw=4:et:enc=utf-8:
