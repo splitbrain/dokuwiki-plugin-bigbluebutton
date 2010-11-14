@@ -1,0 +1,7 @@
+base   bigbluebutton
+author Andreas Gohr
+email  andi@splitbrain.org
+date   2010-11-13
+name   bigbluebutton plugin
+desc   Integrate BigBlueButton conferences into DokuWiki
+url    http://www.dokuwiki.org/plugin:bigbluebutton
