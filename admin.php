@@ -17,15 +17,55 @@ require_once DOKU_PLUGIN.'admin.php';
 
 class admin_plugin_bigbluebutton extends DokuWiki_Admin_Plugin {
 
-    function getMenuSort() { return FIXME; }
-    function forAdminOnly() { return false; }
+    function getMenuSort() {
+        return 553;
+    }
+
+    function forAdminOnly() {
+        return false;
+    }
 
     function handle() {
     }
 
     function html() {
         ptln('<h1>' . $this->getLang('menu') . '</h1>');
+
+        $this->_form();
     }
+
+    function getTOC(){
+        global $conf;
+        $toc = array();
+
+
+        $files = glob($conf['metadir'].'/_bigbluebutton/*.bbbroom');
+        if(is_array($files)) foreach($files as $f){
+            $room = basename($f,'.bbbroom');
+            $toc[] =  array(
+                        'link'  => wl($ID,array('do'=>'admin','page'=>'bigbluebuttom',
+                                      'room'=>$room,'sectok'=>getSecurityToken())),
+                        'title' => $room,
+                        'level' => 1,
+                        'type'  => 'ul',
+                     );
+
+        }
+        return $toc;
+    }
+
+    function _form(){
+        $form = new Doku_Form();
+
+        $form->startFieldset('Room');
+        foreach(array('welcome','number','voicebridge','logout','max','moderators','attendees') as $lbl){
+            $form->addElement(form_makeTextField('bbb['.$lbl.']', $bbb[$lbl], $this->getLang($lbl)));
+            $form->addElement('<br />');
+        }
+        $form->endFieldset();
+        $form->printForm();
+    }
+
 }
 
 // vim:ts=4:sw=4:et:enc=utf-8:
