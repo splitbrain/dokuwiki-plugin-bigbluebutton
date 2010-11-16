@@ -27,9 +27,9 @@ class action_plugin_bigbluebutton extends DokuWiki_Action_Plugin {
     function handle_dokuwiki_started(&$event, $param) {
         if(!isset($_REQUEST['bigbluebutton'])) return;
 
-        $helper = load_plugin('helper','bigbluebutton');
+        $helper = plugin_load('helper','bigbluebutton');
         $room  = $_REQUEST['bigbluebutton'];
-        $setup = helper->loadRoomSetup($room);
+        $setup = $helper->loadRoomSetup($room);
         if(!count($setup)){
             msg('No such room setup',-1);
             return;
@@ -41,10 +41,14 @@ class action_plugin_bigbluebutton extends DokuWiki_Action_Plugin {
             return;
         }
 
-        $bbb = new BigBlueButton($this->getConf('apiurl'),
-                                 $conf->getConf('salt'));
+        $name = $_REQUEST['bbbnickname'];
+        if(!$name) $name = $_SERVER['REMOTE_USER'];
+        if(!$name) $name = 'guest'.rand(1,9999);
 
-        $url = $bbb->joinRoomURL($room, 'FIXME', ($perm > 3), $setup);
+        $bbb = new BigBlueButton($this->getConf('apiurl'),
+                                 $this->getConf('salt'));
+
+        $url = $bbb->joinRoomURL($room, $name, ($perm > 3), $setup);
 
         if($url) send_redirect($url);
     }

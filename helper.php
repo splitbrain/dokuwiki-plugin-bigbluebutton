@@ -10,7 +10,6 @@
 if (!defined('DOKU_INC')) die();
 if (!defined('DOKU_PLUGIN')) define('DOKU_PLUGIN',DOKU_INC.'lib/plugins/');
 
-require_once DOKU_PLUGIN.'helper.php';
 require_once DOKU_PLUGIN.'bigbluebutton/BigBlueButton.class.php';
 
 
@@ -18,13 +17,14 @@ class helper_plugin_bigbluebutton extends DokuWiki_Action_Plugin {
 
     private function getRoomSetupFile($room){
         global $conf;
-        return utf8_encodeFN(str_replace(':','',cleanID($room)));
+        $file = utf8_encodeFN(str_replace(':','',cleanID($room)));
+        $file = $conf['metadir'].'/_bigbluebutton/'.$file.'.bbbroom';
+        return $file;
     }
 
     public function loadRoomSetup($room){
         $room = $this->getRoomSetupFile($room);
-        $roomconf = confToHash($conf['metadir'].'_bigbluebutton/'.$room.'.bbbroom');
-        return $conf;
+        return confToHash($room);
     }
 
     public function saveRoomSetup($room,$data){
@@ -37,7 +37,7 @@ class helper_plugin_bigbluebutton extends DokuWiki_Action_Plugin {
     }
 
     /**
-     * Check the permissions for the current users in the given room
+     * Check the permissions for the current user in the given room
      *
      * Possible return values:
      *
@@ -47,23 +47,21 @@ class helper_plugin_bigbluebutton extends DokuWiki_Action_Plugin {
      * 3 - moderator
      */
     public function checkPermission($room){
-        global $INFO;
-        global $auth;
+        global $USERINFO;
+        $setup = $this->loadRoomSetup($room);
 
-        $setup = $this->getRooomSetupFile($room);
-
-        if( $INFO['userinfo']['user'] &&
+        if( $USERINFO['user'] &&
             $setup['moderators'] &&
             $this->isMember($setup['moderators'],
-                            $INFO['userinfo']['user'],
-                            $INFO['userinfo']['grps'])){
+                            $_SERVER['REMOTE_USER'],
+                            $USERINFO['grps'])){
                 return 3;
         }
 
         if($setup['attendees']){
             if($this->isMember($setup['attendees'],
-                               $INFO['userinfo']['user'],
-                               $INFO['userinfo']['grps']){
+                               $_SERVER['REMOTE_USER'],
+                               $USERINFO['grps'])){
                 return 2;
             }else{
                 return 0;
@@ -84,13 +82,15 @@ class helper_plugin_bigbluebutton extends DokuWiki_Action_Plugin {
      * @returns bool      true for membership acknowledged
      */
     function isMember($memberlist,$user,array $groups){
+        global $auth;
+
         // clean user and groups
         if($auth->isCaseSensitive()){
             $user = utf8_strtolower($user);
             $groups = array_map('utf8_strtolower',$groups);
         }
-        $user = $auth->userClean();
-        $groups = array_map(array($auth,'groupClean'),$groups);
+        $user = $auth->cleanUser($user);
+        $groups = array_map(array($auth,'cleanGroup'),$groups);
 
         // extract the memberlist
         $members = explode(',',$memberlist);
@@ -102,10 +102,10 @@ class helper_plugin_bigbluebutton extends DokuWiki_Action_Plugin {
         foreach($members as $member){
             if($auth->isCaseSensitive()) $member = utf8_strtolower($member);
             if($member[0] == '@'){
-                $member = $auth->groupClean(substr($member,1));
+                $member = $auth->cleanGroup(substr($member,1));
                 if(in_array($member, $groups)) return true;
             }else{
-                $member = $auth->userClean($member);
+                $member = $auth->cleanUser($member);
                 if($member == $user) return true;
             }
         }
